@@ -34,16 +34,16 @@ void route() {
 
     // Serve the lion images
     ROUTE_GET("/lion_awake.jpg") {
-        serve_file("/mnt/data/lion_awake.jpg");
+        serve_file("/mnt/c/FinalSubSystemProg/data/lion_awake.jpg");
     }
 
     ROUTE_GET("/lion_sleeping.jpg") {
-        serve_file("/mnt/data/lion_sleeping.jpg");
+        serve_file("/mnt/c/FinalSubSystemProg/data/lion_sleeping.jpg");
     }
 
+    // דף הבית עם רקע האריה הישן
     ROUTE_GET("/")
     {
-        // דף הכניסה עם רקע האריה הישן
         printf("HTTP/1.1 200 OK\r\n\r\n");
         printf("<html><body style='background-image: url(\"/lion_sleeping.jpg\"); background-size: cover;'>");
         printf("<h2>Welcome to the Lion Site</h2>");
@@ -56,29 +56,56 @@ void route() {
         printf("</body></html>");
     }
 
-    ROUTE_POST("/register")
-    {
-        // רישום משתמש חדש
-        char username[BUF_SIZE], password[BUF_SIZE];
-        sscanf(payload, "username=%s&password=%s", username, password);
-        
-        FILE *file = fopen("password.txt", "a");
-        fprintf(file, "%s:%s\n", username, password);
-        fclose(file);
+    // רישום משתמש חדש
+ROUTE_POST("/register")
+{
+    if (payload_size > 0) {
+        char *username = strtok(payload, "&");
+        char *password = strtok(NULL, "&");
 
-        printf("HTTP/1.1 200 OK\r\n\r\n");
-        printf("User registered successfully! Please log in.");
+        // הסר את "username=" ו-"password="
+        if (username && password) {
+            username = username + 9;  // "username=" הוא 9 תווים
+            password = password + 9;  // "password=" הוא 9 תווים
+
+            FILE *file = fopen("password.txt", "a");
+            if (file != NULL) {
+                fprintf(file, "%s:%s\n", username, password);
+                fclose(file);
+                printf("HTTP/1.1 200 OK\r\n\r\n");
+                printf("User registered successfully! Please log in.");
+            } else {
+                printf("HTTP/1.1 500 Internal Server Error\r\n\r\n");
+                printf("Failed to register the user.");
+            }
+        } else {
+            printf("HTTP/1.1 400 Bad Request\r\n\r\n");
+            printf("Username or password missing.");
+        }
+    } else {
+        printf("HTTP/1.1 400 Bad Request\r\n\r\n");
+        printf("No data received.");
     }
+}
 
+    // התחברות משתמש קיים
     ROUTE_POST("/login")
     {
-        // התחברות משתמש קיים
-        char username[BUF_SIZE], password[BUF_SIZE], line[BUF_SIZE];
-        int found = 0;
-        
-        sscanf(payload, "username=%s&password=%s", username, password);
+        char *username = strtok(payload, "&");
+        char *password = strtok(NULL, "&");
+
+        username = username + 9;  // "username=" הוא 9 תווים
+        password = password + 9;  // "password=" הוא 9 תווים
 
         FILE *file = fopen("password.txt", "r");
+        if (file == NULL) {
+            printf("HTTP/1.1 500 Internal Server Error\r\n\r\n");
+            printf("Failed to open the password file.");
+            return;
+        }
+
+        char line[BUF_SIZE];
+        int found = 0;
         while (fgets(line, sizeof(line), file)) {
             char stored_username[BUF_SIZE], stored_password[BUF_SIZE];
             sscanf(line, "%[^:]:%s", stored_username, stored_password);
@@ -93,7 +120,7 @@ void route() {
         if (found) {
             // טעינת פרופיל המשתמש
             char profile_filename[BUF_SIZE];
-            sprintf(profile_filename, "%s.data", username);
+            snprintf(profile_filename, sizeof(profile_filename), "%s.data", username);
 
             file = fopen(profile_filename, "r");
             if (file) {
@@ -118,14 +145,14 @@ void route() {
         }
     }
 
+    // עדכון פרופיל המשתמש
     ROUTE_POST("/update_profile")
     {
-        // עדכון פרופיל המשתמש
         char username[BUF_SIZE], profile[BUF_SIZE];
         sscanf(payload, "username=%s&profile=%s", username, profile);
         
         char profile_filename[BUF_SIZE];
-        sprintf(profile_filename, "%s.data", username);
+        snprintf(profile_filename, sizeof(profile_filename), "%s.data", username);
         
         FILE *file = fopen(profile_filename, "w");
         fprintf(file, "%s", profile);

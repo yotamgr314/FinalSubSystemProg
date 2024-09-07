@@ -4,27 +4,32 @@
 #include <string.h>
 #include <stdio.h>
 
-//Server control functions
+// Header structure
+typedef struct {
+    char *name;
+    char *value;
+} header_t;
 
+extern header_t reqhdr[17];  // Array to store headers
+
+//Server control functions
 void serve_forever(const char *PORT);
 
 // Client request
-extern char    *method,    // "GET" or "POST"
-        *uri,       // "/index.html" things before '?'
-        *qs,        // "a=1&b=2"     things after  '?'
-        *prot;      // "HTTP/1.1"
-
-extern char    *payload;     // for POST
-extern int      payload_size;
+extern char *method;    // "GET" or "POST"
+extern char *uri;       // "/index.html" things before '?'
+extern char *qs;        // "a=1&b=2"     things after  '?'
+extern char *prot;      // "HTTP/1.1"
+extern char *payload;   // for POST
+extern int payload_size;
 
 char *request_header(const char* name);
-void analyze_http(char* buf,int rcvd);
+void analyze_http(char* buf, int rcvd);
 
 // user shall implement this function
-
 void route();
 
-// some interesting macro for `route()`
+// some interesting macros for `route()`
 #define ROUTE_START()       if (0) {
 #define ROUTE(METHOD,URI)   } else if (strcmp(URI,uri)==0&&strcmp(METHOD,method)==0) {
 #define ROUTE_GET(URI)      ROUTE("GET", URI) 
