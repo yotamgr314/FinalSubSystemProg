@@ -41,61 +41,63 @@ void route() {
         serve_file("/mnt/c/FinalSubSystemProg/data/lion_sleeping.jpg");
     }
 
-    // דף הבית עם רקע האריה הישן
-    ROUTE_GET("/")
-    {
-        printf("HTTP/1.1 200 OK\r\n\r\n");
-        printf("<html><body style='background-image: url(\"/lion_sleeping.jpg\"); background-size: cover;'>");
-        printf("<h2>Welcome to the Lion Site</h2>");
-        printf("<form action='/login' method='POST'>");
-        printf("Username: <input type='text' name='username'><br>");
-        printf("Password: <input type='password' name='password'><br>");
-        printf("<button type='submit'>Log in</button></form><br>");
-        printf("<form action='/register' method='POST'>");
-        printf("<button type='submit'>Register</button></form>");
-        printf("</body></html>");
-    }
-
-    // רישום משתמש חדש
-ROUTE_POST("/register")
+    // Home page with lion sleeping background
+ROUTE_GET("/")
 {
-    if (payload_size > 0) {
-        char *username = strtok(payload, "&");
-        char *password = strtok(NULL, "&");
+    printf("HTTP/1.1 200 OK\r\n\r\n");
+    printf("<html><body style='background-image: url(\"/lion_sleeping.jpg\"); background-size: cover;'>");
+    printf("<h2>Welcome to the Lion Site</h2>");
+    printf("<form action='/login' method='POST'>");
+    printf("Username: <input type='text' name='username'><br>");
+    printf("Password: <input type='password' name='password'><br>");
+    printf("<button type='submit'>Log in</button></form><br>");
+    printf("<form action='/register' method='POST'>");
+    printf("Username: <input type='text' name='username'><br>");
+    printf("Password: <input type='password' name='password'><br>");
+    printf("<button type='submit'>Register</button></form>");
+    printf("</body></html>");
+}
 
-        // הסר את "username=" ו-"password="
-        if (username && password) {
-            username = username + 9;  // "username=" הוא 9 תווים
-            password = password + 9;  // "password=" הוא 9 תווים
+    // Register a new user
+    ROUTE_POST("/register")
+    {
+        if (payload_size > 0) {
+            char *username = strtok(payload, "&");
+            char *password = strtok(NULL, "&");
 
-            FILE *file = fopen("password.txt", "a");
-            if (file != NULL) {
-                fprintf(file, "%s:%s\n", username, password);
-                fclose(file);
-                printf("HTTP/1.1 200 OK\r\n\r\n");
-                printf("User registered successfully! Please log in.");
+            // Remove "username=" and "password="
+            if (username && password) {
+                username = username + 9;  // "username=" is 9 characters
+                password = password + 9;  // "password=" is 9 characters
+
+                FILE *file = fopen("password.txt", "a");
+                if (file != NULL) {
+                    fprintf(file, "%s:%s\n", username, password);
+                    fclose(file);
+                    printf("HTTP/1.1 200 OK\r\n\r\n");
+                    printf("User registered successfully! Please log in.");
+                } else {
+                    printf("HTTP/1.1 500 Internal Server Error\r\n\r\n");
+                    printf("Failed to register the user.");
+                }
             } else {
-                printf("HTTP/1.1 500 Internal Server Error\r\n\r\n");
-                printf("Failed to register the user.");
+                printf("HTTP/1.1 400 Bad Request\r\n\r\n");
+                printf("Username or password missing.");
             }
         } else {
             printf("HTTP/1.1 400 Bad Request\r\n\r\n");
-            printf("Username or password missing.");
+            printf("No data received.");
         }
-    } else {
-        printf("HTTP/1.1 400 Bad Request\r\n\r\n");
-        printf("No data received.");
     }
-}
 
-    // התחברות משתמש קיים
+    // Login an existing user
     ROUTE_POST("/login")
     {
         char *username = strtok(payload, "&");
         char *password = strtok(NULL, "&");
 
-        username = username + 9;  // "username=" הוא 9 תווים
-        password = password + 9;  // "password=" הוא 9 תווים
+        username = username + 9;  // "username=" is 9 characters
+        password = password + 9;  // "password=" is 9 characters
 
         FILE *file = fopen("password.txt", "r");
         if (file == NULL) {
@@ -118,7 +120,7 @@ ROUTE_POST("/register")
         fclose(file);
 
         if (found) {
-            // טעינת פרופיל המשתמש
+            // Load the user profile
             char profile_filename[BUF_SIZE];
             snprintf(profile_filename, sizeof(profile_filename), "%s.data", username);
 
@@ -145,7 +147,7 @@ ROUTE_POST("/register")
         }
     }
 
-    // עדכון פרופיל המשתמש
+    // Update the user profile
     ROUTE_POST("/update_profile")
     {
         char username[BUF_SIZE], profile[BUF_SIZE];
